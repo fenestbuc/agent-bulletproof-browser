@@ -1,12 +1,12 @@
 #!/bin/bash
-PROFILE_DIR="$HOME/.config/chromium/hermes-automation"
+PROFILE_DIR="$HOME/.config/chromium/agent-automation"
 
 echo "Cleaning up stale locks..."
 rm -f "$PROFILE_DIR/SingletonLock"
 rm -f "$PROFILE_DIR/SingletonCookie"
 rm -f "$PROFILE_DIR/SingletonSocket"
 
-echo "Starting Hermes Automation Browser..."
+echo "Starting Agent Automation Browser..."
 # We launch without nohup so it can be managed cleanly by the user or background task
 chromium-browser \
   --remote-debugging-port=9222 \

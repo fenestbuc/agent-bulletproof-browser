@@ -42,12 +42,12 @@ Use the user's everyday Chromium with existing logins, extensions, and cookies.
 
 ### Way 2: Background automation (No popups / Safe lifecycle)
 
-For all background, scheduled, or agentic automation, **always** use the dedicated lifecycle wrapper script. This script automatically starts Chromium natively (`--headless=new`), injects permission to download files to `~/hermes-workspace/downloads`, runs the given python script, and then securely tears down the browser to prevent memory leaks and zombie processes. 
+For all background, scheduled, or agentic automation, **always** use the dedicated lifecycle wrapper script. This script automatically starts Chromium natively (`--headless=new`), injects permission to download files to `~/Downloads/agent-downloads`, runs the given python script, and then securely tears down the browser to prevent memory leaks and zombie processes. 
 
-It utilizes `flock` to queue concurrent executions and a Linux `prctl` Chain of Death to guarantee 100% zombie immunity even if the parent task is hard-killed (`SIGKILL`). If multiple subagents attempt browser tasks simultaneously, they will wait in line rather than corrupting the profile or stealing tab focus.
+It also utilizes `flock` to queue concurrent executions. If multiple subagents attempt browser tasks simultaneously, they will wait in line rather than corrupting the profile or stealing tab focus.
 
 ```bash
-~/.hermes/skills/devops/browser-harness/scripts/run-hermes-headless.sh "
+run-agent-headless "
 new_tab('https://example.com')
 wait_for_load()
 print(page_info())

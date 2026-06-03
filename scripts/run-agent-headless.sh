@@ -4,8 +4,8 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-PROFILE_DIR="$HOME/.config/chromium/hermes-automation"
-DOWNLOAD_DIR="$HOME/hermes-workspace/downloads"
+PROFILE_DIR="$HOME/.config/chromium/agent-automation"
+DOWNLOAD_DIR="$HOME/Downloads/agent-downloads"
 mkdir -p "$DOWNLOAD_DIR"
 
 # Allow overriding timeout for testing, default to 5 minutes (300s)
@@ -15,7 +15,7 @@ EXEC_TIMEOUT=${BH_TIMEOUT:-300}
 TASK_SCRIPT="cdp('Browser.setDownloadBehavior', behavior='allow', downloadPath='$DOWNLOAD_DIR', eventsEnabled=True)
 $1"
 
-LOCKFILE="/tmp/hermes-browser-execution.lock"
+LOCKFILE="/tmp/agent-browser-execution.lock"
 exec 200>"$LOCKFILE"
 echo "[Process $$] Waiting for exclusive browser lock (max 120s)..."
 flock -w 120 200 || { echo "[Process $$] Timeout waiting for browser lock. Another task is hung."; exit 1; }
@@ -42,7 +42,7 @@ cleanup() {
         fi
     fi
     
-    pkill -9 -f "chromium-browser.*hermes-automation" 2>/dev/null || true
+    pkill -9 -f "chromium-browser.*agent-automation" 2>/dev/null || true
     
     # Clean stale Chromium lockfiles and explicitly clear caching directories to prevent long-term bloat
     rm -f "$PROFILE_DIR/SingletonLock" "$PROFILE_DIR/SingletonCookie" "$PROFILE_DIR/SingletonSocket"
@@ -52,7 +52,7 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
-if ps aux | grep "[c]hromium-browser" | grep -q "hermes-automation"; then
+if ps aux | grep "[c]hromium-browser" | grep -q "agent-automation"; then
     echo "[Process $$] Reusing existing Chromium instance..."
     export BU_CDP_URL=http://127.0.0.1:9222
     timeout $EXEC_TIMEOUT browser-harness -c "$TASK_SCRIPT"

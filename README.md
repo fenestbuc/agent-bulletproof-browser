@@ -1,8 +1,11 @@
-# Hermes Bulletproof Browser Automation
+# Agent Bulletproof Browser Automation
 
-An enterprise-grade, autonomous headless browser architecture built for AI agents. 
+An enterprise-grade, autonomous headless browser architecture built for AI agents (Hermes, OpenClaw, Claude Code, etc.). 
 
 Most AI developers struggle with agent-spawned browsers crashing, leaving memory leaks, hanging on downloads, or failing Cloudflare checks. This repository provides a drop-in set of wrapper scripts and a pre-configured AI skill (`SKILL.md`) that makes browser automation **100% stable, scalable, and undetectable.**
+
+## 🤖 For AI Agents (Auto-Install)
+If you are an AI agent reading this, please read `AGENT_INSTRUCTIONS.md` for your automated installation steps.
 
 ## 🌟 Key Features
 
@@ -16,9 +19,9 @@ Most AI developers struggle with agent-spawned browsers crashing, leaving memory
 * **Headless Downloads:** Explicitly injects a CDP `Browser.setDownloadBehavior` command to override Chromium's default security block on headless downloads.
 * **Vision-First AI Skill:** Includes the `SKILL.md` that teaches the AI *how* to use the browser efficiently—banning raw WebSockets, forbidding DOM-selector guessing on obfuscated React sites, and strictly enforcing coordinate-based clicking via screenshots.
 
-## 📦 Installation
+## 📦 Installation (Manual)
 
-Run the install script to deploy the wrappers and skills into your `~/.hermes/` directory:
+Run the install script to deploy the wrappers and skills into your agent's directory:
 
 ```bash
 chmod +x install.sh
@@ -30,7 +33,7 @@ chmod +x install.sh
 ### 1. Foreground Login (One-Time Setup per Platform)
 Run the foreground script to visually log into platforms (X, LinkedIn, etc.):
 ```bash
-~/.hermes/scripts/start-hermes-browser.sh
+start-agent-browser
 ```
 *Note: This uses `--password-store=basic` so cookies are decrypted cleanly when the profile is later launched headlessly.*
 
@@ -38,7 +41,7 @@ Run the foreground script to visually log into platforms (X, LinkedIn, etc.):
 Have your AI agent (or cron job) execute Python `browser-harness` scripts through the master wrapper:
 
 ```bash
-~/.hermes/scripts/run-hermes-headless.sh "
+run-agent-headless "
 new_tab('https://example.com')
 wait_for_load()
 capture_screenshot().save('/tmp/shot.png')

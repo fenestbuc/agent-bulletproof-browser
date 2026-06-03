@@ -4,9 +4,14 @@ An enterprise-grade, autonomous headless browser architecture built for AI agent
 
 Most AI developers struggle with agent-spawned browsers crashing, leaving memory leaks, hanging on downloads, or failing Cloudflare checks. This repository provides a drop-in set of wrapper scripts and a pre-configured AI skill (`SKILL.md`) that makes browser automation **100% stable, scalable, and undetectable.**
 
-## 🤖 For AI Agents (Auto-Install)
-If you are an AI agent reading this, please read `AGENT_INSTRUCTIONS.md` for your automated installation steps.
+## 🤖 Auto-Install via AI Agent (Recommended)
 
+Want to install this without touching the terminal? Just copy and paste this exact prompt to your Hermes, OpenClaw, or other AI agent:
+
+> **"Please install the Agent Bulletproof Browser Automation kit from https://github.com/fenestbuc/agent-bulletproof-browser. Clone it, read the `AGENT_INSTRUCTIONS.md` file in the repository, and follow its steps exactly to deploy it to my system."**
+
+The agent will automatically clone the repo, run the installer, and configure its own skills.
+ 
 ## 🌟 Key Features
 
 * **Multi-Agent Concurrency (`flock`):** Safely queues concurrent background execution. If multiple AI subagents or cron jobs trigger browser tasks simultaneously, they wait in line instead of crashing the profile database or stealing tab focus.

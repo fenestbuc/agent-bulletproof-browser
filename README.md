@@ -1,5 +1,7 @@
 # Agent Bulletproof Browser Automation
 
+<a href="https://www.producthunt.com/products/agent-bulletproof-browser?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-agent-bulletproof-browser" target="_blank" rel="noopener noreferrer"><img alt="Agent Bulletproof Browser - The 100% stable, headless browser kit for AI agents | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1162677&amp;theme=light&amp;t=1780507235096"></a>
+
 An enterprise-grade, autonomous headless browser architecture built for AI agents (Hermes, OpenClaw, Claude Code, etc.). 
 
 Most AI developers struggle with agent-spawned browsers crashing, leaving memory leaks, hanging on downloads, or failing Cloudflare checks. This repository provides a drop-in set of wrapper scripts and a pre-configured AI skill (`SKILL.md`) that makes browser automation **100% stable, scalable, and undetectable.**

@@ -24,11 +24,16 @@ EXEC_TIMEOUT=${BH_TIMEOUT:-300}
 # Allow overriding CDP port, default to 9222
 CDP_PORT=${BH_CDP_PORT:-9222}
 
+SANDBOX_FLAG=""
+if [ "$(id -u)" = "0" ]; then
+    SANDBOX_FLAG="--no-sandbox"
+fi
+
 # Pre-inject the CDP download behavior command before the user script
 TASK_SCRIPT="cdp('Browser.setDownloadBehavior', behavior='allow', downloadPath='$DOWNLOAD_DIR', eventsEnabled=True)
 $1"
 
-LOCKFILE="/tmp/agent-browser-execution.lock"
+LOCKFILE="/tmp/agent-browser-execution-$(id -u).lock"
 exec 200>"$LOCKFILE"
 # Check if lock is held by another process to provide intelligent feedback
 if ! flock -n 200; then
@@ -82,6 +87,9 @@ cleanup() {
         rmdir "$DOWNLOAD_DIR" 2>/dev/null || true
     fi
     
+    # Garbage collect stale agent downloads older than 7 days to prevent disk exhaustion
+    find "$HOME/hermes-workspace/downloads/" -maxdepth 1 -name "run_*" -type d -mtime +7 -exec rm -rf {} + 2>/dev/null || true
+    
     echo "[Process $$] Cleanup complete. Releasing lock."
 }
 
@@ -95,7 +103,14 @@ if pgrep -f "(chromium|chrome).*agent-automation" >/dev/null 2>&1; then
     EXIT_CODE=$?
     set -e
 else
-    if lsof -i:$CDP_PORT -t >/dev/null 2>&1; then
+    PORT_IN_USE=0
+    if command -v lsof >/dev/null 2>&1; then
+        lsof -i:$CDP_PORT -t >/dev/null 2>&1 && PORT_IN_USE=1
+    elif command -v ss >/dev/null 2>&1; then
+        ss -lnt | grep -q ":$CDP_PORT " && PORT_IN_USE=1
+    fi
+    
+    if [ $PORT_IN_USE -eq 1 ]; then
         echo "Error: Port $CDP_PORT is in use by an unrecognized process. Aborting to prevent collision."
         exit 1
     fi
@@ -120,6 +135,7 @@ except Exception:
     sys.exit(subprocess.call(sys.argv[1:]))
 " "$CHROME_BIN" \
       --headless=new \
+      $SANDBOX_FLAG \
       --password-store=basic \
       --remote-debugging-port=$CDP_PORT \
       --user-data-dir="$PROFILE_DIR" \

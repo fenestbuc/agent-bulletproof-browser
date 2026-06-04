@@ -8,6 +8,15 @@ rm -f "$PROFILE_DIR/SingletonSocket"
 
 echo "Starting Agent Automation Browser..."
 # We launch without nohup so it can be managed cleanly by the user or background task
+
+# Check if port 9222 is in use by another instance not managed by us
+if lsof -i:9222 -t >/dev/null 2>&1; then
+    if ! ps aux | grep "[c]hromium-browser" | grep -q "agent-automation"; then
+        echo "Error: Port 9222 is in use by a different process. Please close it first to prevent profile collision."
+        exit 1
+    fi
+fi
+
 chromium-browser \
   --remote-debugging-port=9222 \
   --user-data-dir="$PROFILE_DIR" \

@@ -5,7 +5,7 @@ if [ -z "$1" ]; then
 fi
 
 PROFILE_DIR="$HOME/.config/chromium/agent-automation"
-DOWNLOAD_DIR="$HOME/Downloads/agent-downloads"
+DOWNLOAD_DIR="$HOME/hermes-workspace/downloads"
 mkdir -p "$DOWNLOAD_DIR"
 
 # Allow overriding timeout for testing, default to 5 minutes (300s)
@@ -32,17 +32,19 @@ cleanup() {
     
     echo "[Process $$] Running cleanup routine..."
     
-    if [ -n "$CHROME_PID" ]; then
-        if kill -0 $CHROME_PID 2>/dev/null; then
-            echo "[Process $$] Tearing down Chromium (PID $CHROME_PID)..."
-            kill -15 $CHROME_PID 2>/dev/null
-            sleep 1
-            kill -9 $CHROME_PID 2>/dev/null 
-            wait $CHROME_PID 2>/dev/null
+    if [ "$WE_STARTED_BROWSER" = "1" ]; then
+        if [ -n "$CHROME_PID" ]; then
+            if kill -0 $CHROME_PID 2>/dev/null; then
+                echo "[Process $$] Tearing down Chromium (PID $CHROME_PID)..."
+                kill -15 $CHROME_PID 2>/dev/null
+                sleep 1
+                kill -9 $CHROME_PID 2>/dev/null 
+                wait $CHROME_PID 2>/dev/null
+            fi
         fi
+        
+        pkill -9 -f "chromium-browser.*agent-automation" 2>/dev/null || true
     fi
-    
-    pkill -9 -f "chromium-browser.*agent-automation" 2>/dev/null || true
     
     # Clean stale Chromium lockfiles and explicitly clear caching directories to prevent long-term bloat
     rm -f "$PROFILE_DIR/SingletonLock" "$PROFILE_DIR/SingletonCookie" "$PROFILE_DIR/SingletonSocket"
@@ -58,7 +60,13 @@ if ps aux | grep "[c]hromium-browser" | grep -q "agent-automation"; then
     timeout $EXEC_TIMEOUT browser-harness -c "$TASK_SCRIPT"
     EXIT_CODE=$?
 else
+    if lsof -i:9222 -t >/dev/null 2>&1; then
+        echo "Error: Port 9222 is in use by an unrecognized process. Aborting to prevent collision."
+        exit 1
+    fi
+
     echo "[Process $$] Starting temporary headless Chromium with Chain-of-Death..."
+    WE_STARTED_BROWSER="1"
     rm -f "$PROFILE_DIR/SingletonLock" "$PROFILE_DIR/SingletonCookie" "$PROFILE_DIR/SingletonSocket"
     
     python3 -c "

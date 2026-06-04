@@ -149,8 +149,8 @@ Chrome -> CDP WebSocket -> browser_harness.daemon -> IPC Unix socket -> browser-
 - `references/cloudflare-dashboard-automation.md` -- why React custom dropdowns on dash.cloudflare.com resist automation and what to do instead
 - `references/gcp-console-automation.md` -- Google Cloud Console bot detection limits and alternative paths for service account key generation
 - `references/notion-automation.md` -- Notion UI automation: left-then-right-click patterns, accessibility tree bridging, and when to stop fighting the UI
-- `scripts/run-hermes-headless.sh` -- the mandatory wrapper for background automation. Use its absolute path: `~/.hermes/skills/devops/browser-harness/scripts/run-hermes-headless.sh`.
-- `scripts/start-hermes-browser.sh` -- the foreground login helper for the user. Use its absolute path: `~/.hermes/skills/devops/browser-harness/scripts/start-hermes-browser.sh`.
+- `run-agent-headless` -- the mandatory wrapper for background automation. Located at `~/.local/bin/run-agent-headless`.
+- `start-agent-browser` -- the foreground login helper for the user. Located at `~/.local/bin/start-agent-browser`.
 
 ## Pitfalls
 

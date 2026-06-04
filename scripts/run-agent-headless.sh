@@ -48,6 +48,7 @@ WE_STARTED_BROWSER="0"
 EXIT_CODE=0
 
 cleanup() {
+    set +e
     if [ $CLEANUP_DONE -eq 1 ]; then
         return
     fi
@@ -76,12 +77,17 @@ cleanup() {
     # Clean stale Chromium lockfiles and explicitly clear caching directories to prevent long-term bloat
     rm -f "$PROFILE_DIR/SingletonLock" "$PROFILE_DIR/SingletonCookie" "$PROFILE_DIR/SingletonSocket"
     rm -rf "$PROFILE_DIR/Default/Cache" "$PROFILE_DIR/Default/Code Cache" "$PROFILE_DIR/Default/GPUCache" 2>/dev/null
+    # Clean up empty download directory to prevent bloat
+    if [ -d "$DOWNLOAD_DIR" ]; then
+        rmdir "$DOWNLOAD_DIR" 2>/dev/null || true
+    fi
+    
     echo "[Process $$] Cleanup complete. Releasing lock."
 }
 
 trap cleanup EXIT INT TERM HUP QUIT
 
-if ps aux | grep -E "(chromium|chrome).*agent-automation" >/dev/null 2>&1; then
+if pgrep -f "(chromium|chrome).*agent-automation" >/dev/null 2>&1; then
     echo "[Process $$] Reusing existing Chromium instance..."
     export BU_CDP_URL=http://127.0.0.1:$CDP_PORT
     set +e
@@ -99,8 +105,8 @@ else
     rm -f "$PROFILE_DIR/SingletonLock" "$PROFILE_DIR/SingletonCookie" "$PROFILE_DIR/SingletonSocket"
     
     # Dynamically construct a stealth User-Agent based on the actual installed binary version
-    RAW_VER=$($CHROME_BIN --version | awk '{print $2}')
-    CLEAN_VER=$(echo "$RAW_VER" | grep -oP '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' || echo "148.0.0.0")
+    RAW_VER=$($CHROME_BIN --version 2>/dev/null || echo "")
+    CLEAN_VER=$(echo "$RAW_VER" | grep -oP '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo "148.0.0.0")
     STEALTH_UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$CLEAN_VER Safari/537.36"
 
     python3 -c "

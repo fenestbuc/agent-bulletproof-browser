@@ -20,7 +20,7 @@ echo "Starting Agent Automation Browser..."
 
 # Check if port is in use by another instance not managed by us
 if lsof -i:$CDP_PORT -t >/dev/null 2>&1; then
-    if ! ps aux | grep -E "(chromium|chrome).*agent-automation" >/dev/null 2>&1; then
+    if ! pgrep -f "(chromium|chrome).*agent-automation" >/dev/null 2>&1; then
         echo "Error: Port $CDP_PORT is in use by a different process. Please close it first to prevent profile collision."
         exit 1
     fi
@@ -28,9 +28,8 @@ fi
 
 # Dynamically construct a stealth User-Agent based on the actual installed binary version
 # This prevents WAF bans (like Cloudflare) that flag outdated browser versions over time
-RAW_VER=$($CHROME_BIN --version | awk '{print $2}')
-# Some distributions might return "Chromium 148.0..." instead of just the number, so we strip non-numerics if necessary
-CLEAN_VER=$(echo "$RAW_VER" | grep -oP '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' || echo "148.0.0.0")
+RAW_VER=$($CHROME_BIN --version 2>/dev/null || echo "")
+CLEAN_VER=$(echo "$RAW_VER" | grep -oP '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo "148.0.0.0")
 STEALTH_UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$CLEAN_VER Safari/537.36"
 
 $CHROME_BIN \

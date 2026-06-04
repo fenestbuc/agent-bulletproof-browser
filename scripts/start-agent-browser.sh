@@ -1,4 +1,10 @@
 #!/bin/bash
+CHROME_BIN=$(command -v chromium-browser || command -v chromium || command -v google-chrome || command -v google-chrome-stable)
+if [ -z "$CHROME_BIN" ]; then
+    echo "Error: No Chromium or Google Chrome executable found in PATH."
+    exit 1
+fi
+
 PROFILE_DIR="$HOME/.config/chromium/agent-automation"
 
 echo "Cleaning up stale locks..."
@@ -11,13 +17,20 @@ echo "Starting Agent Automation Browser..."
 
 # Check if port 9222 is in use by another instance not managed by us
 if lsof -i:9222 -t >/dev/null 2>&1; then
-    if ! ps aux | grep "[c]hromium-browser" | grep -q "agent-automation"; then
+    if ! ps aux | grep -E "(chromium|chrome).*agent-automation" >/dev/null 2>&1; then
         echo "Error: Port 9222 is in use by a different process. Please close it first to prevent profile collision."
         exit 1
     fi
 fi
 
-chromium-browser \
+# Dynamically construct a stealth User-Agent based on the actual installed binary version
+# This prevents WAF bans (like Cloudflare) that flag outdated browser versions over time
+RAW_VER=$($CHROME_BIN --version | awk '{print $2}')
+# Some distributions might return "Chromium 148.0..." instead of just the number, so we strip non-numerics if necessary
+CLEAN_VER=$(echo "$RAW_VER" | grep -oP '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' || echo "148.0.0.0")
+STEALTH_UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$CLEAN_VER Safari/537.36"
+
+$CHROME_BIN \
   --remote-debugging-port=9222 \
   --user-data-dir="$PROFILE_DIR" \
   --remote-allow-origins='*' \
@@ -34,4 +47,4 @@ chromium-browser \
   --disable-breakpad \
   --disk-cache-dir=/dev/null \
   --disk-cache-size=1 \
-  --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+  --user-agent="$STEALTH_UA"

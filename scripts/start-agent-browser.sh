@@ -1,11 +1,14 @@
 #!/bin/bash
-CHROME_BIN=$(command -v chromium-browser || command -v chromium || command -v google-chrome || command -v google-chrome-stable)
+set -euo pipefail
+
+CHROME_BIN=$(command -v chromium-browser || command -v chromium || command -v google-chrome || command -v google-chrome-stable || true)
 if [ -z "$CHROME_BIN" ]; then
     echo "Error: No Chromium or Google Chrome executable found in PATH."
     exit 1
 fi
 
 PROFILE_DIR="$HOME/.config/chromium/agent-automation"
+CDP_PORT=${BH_CDP_PORT:-9222}
 
 echo "Cleaning up stale locks..."
 rm -f "$PROFILE_DIR/SingletonLock"
@@ -15,10 +18,10 @@ rm -f "$PROFILE_DIR/SingletonSocket"
 echo "Starting Agent Automation Browser..."
 # We launch without nohup so it can be managed cleanly by the user or background task
 
-# Check if port 9222 is in use by another instance not managed by us
-if lsof -i:9222 -t >/dev/null 2>&1; then
+# Check if port is in use by another instance not managed by us
+if lsof -i:$CDP_PORT -t >/dev/null 2>&1; then
     if ! ps aux | grep -E "(chromium|chrome).*agent-automation" >/dev/null 2>&1; then
-        echo "Error: Port 9222 is in use by a different process. Please close it first to prevent profile collision."
+        echo "Error: Port $CDP_PORT is in use by a different process. Please close it first to prevent profile collision."
         exit 1
     fi
 fi
@@ -31,7 +34,7 @@ CLEAN_VER=$(echo "$RAW_VER" | grep -oP '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' || echo 
 STEALTH_UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$CLEAN_VER Safari/537.36"
 
 $CHROME_BIN \
-  --remote-debugging-port=9222 \
+  --remote-debugging-port=$CDP_PORT \
   --user-data-dir="$PROFILE_DIR" \
   --remote-allow-origins='*' \
   --password-store=basic \

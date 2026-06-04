@@ -1,10 +1,12 @@
 #!/bin/bash
-if [ -z "$1" ]; then
+set -euo pipefail
+
+if [ -z "${1:-}" ]; then
     echo "Usage: $0 '<browser-harness python script>'"
     exit 1
 fi
 
-CHROME_BIN=$(command -v chromium-browser || command -v chromium || command -v google-chrome || command -v google-chrome-stable)
+CHROME_BIN=$(command -v chromium-browser || command -v chromium || command -v google-chrome || command -v google-chrome-stable || true)
 if [ -z "$CHROME_BIN" ]; then
     echo "Error: No Chromium or Google Chrome executable found in PATH."
     exit 1
@@ -19,6 +21,9 @@ export AGENT_DOWNLOAD_DIR="$DOWNLOAD_DIR"
 # Allow overriding timeout for testing, default to 5 minutes (300s)
 EXEC_TIMEOUT=${BH_TIMEOUT:-300}
 
+# Allow overriding CDP port, default to 9222
+CDP_PORT=${BH_CDP_PORT:-9222}
+
 # Pre-inject the CDP download behavior command before the user script
 TASK_SCRIPT="cdp('Browser.setDownloadBehavior', behavior='allow', downloadPath='$DOWNLOAD_DIR', eventsEnabled=True)
 $1"
@@ -27,7 +32,7 @@ LOCKFILE="/tmp/agent-browser-execution.lock"
 exec 200>"$LOCKFILE"
 # Check if lock is held by another process to provide intelligent feedback
 if ! flock -n 200; then
-    LOCK_HOLDER=$(fuser $LOCKFILE 2>/dev/null | awk '{print $1}')
+    LOCK_HOLDER=$(fuser "$LOCKFILE" 2>/dev/null | awk '{print $1}' || true)
     if [ -n "$LOCK_HOLDER" ]; then
         echo "[Process $$] Queue is busy. Waiting for Process $LOCK_HOLDER to finish its browser task (max 120s)..."
     else
@@ -72,16 +77,16 @@ cleanup() {
     echo "[Process $$] Cleanup complete. Releasing lock."
 }
 
-trap cleanup EXIT INT TERM
+trap cleanup EXIT INT TERM HUP QUIT
 
 if ps aux | grep -E "(chromium|chrome).*agent-automation" >/dev/null 2>&1; then
     echo "[Process $$] Reusing existing Chromium instance..."
-    export BU_CDP_URL=http://127.0.0.1:9222
+    export BU_CDP_URL=http://127.0.0.1:$CDP_PORT
     timeout $EXEC_TIMEOUT browser-harness -c "$TASK_SCRIPT"
     EXIT_CODE=$?
 else
-    if lsof -i:9222 -t >/dev/null 2>&1; then
-        echo "Error: Port 9222 is in use by an unrecognized process. Aborting to prevent collision."
+    if lsof -i:$CDP_PORT -t >/dev/null 2>&1; then
+        echo "Error: Port $CDP_PORT is in use by an unrecognized process. Aborting to prevent collision."
         exit 1
     fi
 
@@ -106,9 +111,12 @@ except Exception:
 " chromium-browser \
       --headless=new \
       --password-store=basic \
-      --remote-debugging-port=9222 \
+      --remote-debugging-port=$CDP_PORT \
       --user-data-dir="$PROFILE_DIR" \
       --remote-allow-origins='*' \
+      --window-size=1920,1080 \
+      --disable-popup-blocking \
+      --disable-extensions \
       --disable-backgrounding-occluded-windows \
       --disable-renderer-backgrounding \
       --disable-background-timer-throttling \
@@ -123,16 +131,18 @@ except Exception:
       --disk-cache-dir=/dev/null \
       --disk-cache-size=1 \
       --user-agent="$STEALTH_UA" \
-      --ignore-certificate-errors > /dev/null 2>&1 &
+      --ignore-certificate-errors > "$PROFILE_DIR/headless-chromium.log" 2>&1 &
       
     CHROME_PID=$!
     # Wait for CDP endpoint to be ready
-    if ! timeout 10 bash -c 'until curl -s http://127.0.0.1:9222/json/version >/dev/null 2>&1; do sleep 0.5; done'; then
-        echo "[Process $$] Error: Chromium failed to bind to port 9222 within 10 seconds. Check for zombie processes or missing display dependencies."
+    if ! timeout 10 bash -c "until curl -s http://127.0.0.1:$CDP_PORT/json/version >/dev/null 2>&1; do sleep 0.5; done"; then
+        echo "[Process $$] Error: Chromium failed to bind to port $CDP_PORT within 10 seconds."
+        echo "Last 20 lines of Chromium crash log ($PROFILE_DIR/headless-chromium.log):"
+        tail -n 20 "$PROFILE_DIR/headless-chromium.log"
         exit 1
     fi
     
-    export BU_CDP_URL=http://127.0.0.1:9222
+    export BU_CDP_URL=http://127.0.0.1:$CDP_PORT
     
     timeout $EXEC_TIMEOUT browser-harness -c "$TASK_SCRIPT"
     EXIT_CODE=$?

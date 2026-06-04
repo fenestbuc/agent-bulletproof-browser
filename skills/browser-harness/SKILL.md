@@ -42,7 +42,7 @@ Use the user's everyday Chromium with existing logins, extensions, and cookies.
 
 ### Way 2: Background automation (No popups / Safe lifecycle)
 
-For all background, scheduled, or agentic automation, **always** use the dedicated lifecycle wrapper script. This script automatically starts Chromium natively (`--headless=new`), injects permission to download files to `~/Downloads/agent-downloads`, runs the given python script, and then securely tears down the browser to prevent memory leaks and zombie processes. 
+For all background, scheduled, or agentic automation, **always** use the dedicated lifecycle wrapper script. This script automatically starts Chromium natively (`--headless=new`), explicitly injects permission to download files to an isolated directory (exported as `$AGENT_DOWNLOAD_DIR`), runs the given python script, and then securely tears down the browser to prevent memory leaks and zombie processes. 
 
 It also utilizes `flock` to queue concurrent executions. If multiple subagents attempt browser tasks simultaneously, they will wait in line rather than corrupting the profile or stealing tab focus.
 
@@ -167,3 +167,4 @@ Chrome -> CDP WebSocket -> browser_harness.daemon -> IPC Unix socket -> browser-
   ```python
   js("Array.from(document.querySelectorAll('*')).filter(e => e.textContent && e.textContent.trim() === 'Target Text').map(e => e.getBoundingClientRect())")
   ```
+- **Downloading Files Headlessly.** Headless Chrome natively blocks all downloads. Our wrapper explicitly permits them, but saves them to a dynamically generated ephemeral directory to prevent race conditions. **NEVER assume downloads go to `~/Downloads`. Always read the `AGENT_DOWNLOAD_DIR` environment variable to find your downloaded files:** `os.environ.get("AGENT_DOWNLOAD_DIR")`.

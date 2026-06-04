@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install bats-core
+        run: |
+          git clone --depth 1 https://github.com/bats-core/bats-core.git /tmp/bats-core
+          sudo /tmp/bats-core/install.sh /usr/local
+
+      - name: Syntax check all shell scripts
+        run: |
+          bash -n scripts/run-agent-headless.sh
+          bash -n scripts/start-agent-browser.sh
+          bash -n scripts/agent-cookie-sync.sh
+          bash -n install.sh
+          bash -n tests/run-tests.sh
+
+      - name: Run manual test suite
+        run: bash tests/run-tests.sh
+
+      - name: Run bats test suite
+        run: bats tests/test-core.bats
+
+      - name: Verify JSON check output is valid ND-JSON
+        run: |
+          AGENT_JSON_LOG=1 bash scripts/run-agent-headless.sh --check | while read -r line; do
+            echo "$line" | python3 -m json.tool >/dev/null 2>&1 || { echo "Invalid JSON: $line"; exit 1; }
+          done
+          echo "All JSON lines validated."

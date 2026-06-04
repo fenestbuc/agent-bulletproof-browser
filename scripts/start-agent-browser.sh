@@ -41,6 +41,7 @@ $CHROME_BIN \
   --disable-backgrounding-occluded-windows \
   --disable-renderer-backgrounding \
   --disable-background-timer-throttling \
+  --disable-blink-features=AutomationControlled \
   --disable-dev-shm-usage \
   --mute-audio \
   --no-first-run \

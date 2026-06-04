@@ -44,6 +44,8 @@ echo "[Process $$] Lock acquired. Executing task."
 
 CHROME_PID=""
 CLEANUP_DONE=0
+WE_STARTED_BROWSER="0"
+EXIT_CODE=0
 
 cleanup() {
     if [ $CLEANUP_DONE -eq 1 ]; then
@@ -82,8 +84,10 @@ trap cleanup EXIT INT TERM HUP QUIT
 if ps aux | grep -E "(chromium|chrome).*agent-automation" >/dev/null 2>&1; then
     echo "[Process $$] Reusing existing Chromium instance..."
     export BU_CDP_URL=http://127.0.0.1:$CDP_PORT
+    set +e
     timeout $EXEC_TIMEOUT browser-harness -c "$TASK_SCRIPT"
     EXIT_CODE=$?
+    set -e
 else
     if lsof -i:$CDP_PORT -t >/dev/null 2>&1; then
         echo "Error: Port $CDP_PORT is in use by an unrecognized process. Aborting to prevent collision."
@@ -108,7 +112,7 @@ try:
     sys.exit(subprocess.Popen(sys.argv[1:], preexec_fn=set_pdeathsig).wait())
 except Exception:
     sys.exit(subprocess.call(sys.argv[1:]))
-" chromium-browser \
+" "$CHROME_BIN" \
       --headless=new \
       --password-store=basic \
       --remote-debugging-port=$CDP_PORT \
@@ -120,6 +124,7 @@ except Exception:
       --disable-backgrounding-occluded-windows \
       --disable-renderer-backgrounding \
       --disable-background-timer-throttling \
+      --disable-blink-features=AutomationControlled \
       --disable-dev-shm-usage \
       --disable-gpu \
       --mute-audio \
@@ -144,8 +149,10 @@ except Exception:
     
     export BU_CDP_URL=http://127.0.0.1:$CDP_PORT
     
+    set +e
     timeout $EXEC_TIMEOUT browser-harness -c "$TASK_SCRIPT"
     EXIT_CODE=$?
+    set -e
 fi
 
 exit $EXIT_CODE

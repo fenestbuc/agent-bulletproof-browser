@@ -6,10 +6,12 @@ The user has directed you to this repository to install the **Bulletproof Browse
 Please follow these steps exactly using your available terminal and file tools.
 
 ## Step 1: Clone the Repository
-Clone this repository to the user's workspace or temporary directory.
+Clone this repository to a stable workspace directory (e.g., `~/hermes-workspace` or `~/agent-workspace`). Do not use `/tmp` as it violates long-term file retention policies for skills.
 ```bash
-git clone https://github.com/fenestbuc/agent-bulletproof-browser.git /tmp/agent-bulletproof-browser
-cd /tmp/agent-bulletproof-browser
+mkdir -p ~/hermes-workspace
+cd ~/hermes-workspace
+git clone https://github.com/fenestbuc/agent-bulletproof-browser.git
+cd agent-bulletproof-browser
 ```
 
 ## Step 2: Run the Installer

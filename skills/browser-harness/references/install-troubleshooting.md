@@ -27,7 +27,7 @@ chromium-browser --new-window "chrome://inspect/#remote-debugging"
 
 ```bash
 chromium-browser --remote-debugging-port=9222 \
-  --user-data-dir=$HOME/.config/chromium/hermes-automation \
+  --user-data-dir=$HOME/.config/chromium/agent-automation-bg \
   --remote-allow-origins='*' &
 export BU_CDP_URL=http://127.0.0.1:9222
 browser-harness -c 'print(page_info())'
@@ -35,8 +35,8 @@ browser-harness -c 'print(page_info())'
 
 The `--user-data-dir` MUST NOT be the platform default. Chrome 136+ silently no-ops `--remote-debugging-port` when the default profile path is used.
 
-**Background Xvfb & Keyring Pitfall:** 
-Never attempt to clone the user's active/foreground profile (e.g., `Profile 15`) to run it headless via Xvfb for background automation. Chromium encrypts cookies using the OS keyring (GNOME password store). When run in an isolated Xvfb headless session, the browser loses access to the keyring, fails to decrypt cookies, and invalidates authenticated sessions (leading to instant detection and login redirects on strict sites like X/Twitter). Always use the dedicated `hermes-automation` profile where the user logs in once explicitly.
+**Background Xvfb & Keyring Pitfall:**
+Never attempt to clone the user's active/foreground profile (e.g., `Profile 15`) to run it headless via Xvfb for background automation. Chromium encrypts cookies using the OS keyring (GNOME password store). When run in an isolated Xvfb headless session, the browser loses access to the keyring, fails to decrypt cookies, and invalidates authenticated sessions (leading to instant detection and login redirects on strict sites like X/Twitter). Always use the dedicated `agent-automation-bg` profile, and use `agent-cookie-sync` to copy decrypted auth state from the foreground login profile.
 
 ## Error: "DevToolsActivePort not found"
 

@@ -29,8 +29,17 @@ Depending on your agent type, reload your skills so you become aware of the new 
 ## Step 4: Verify Installation
 Run a quick test to ensure the wrapper script is in your PATH and functioning.
 ```bash
+run-agent-headless --check
+```
+If you want to verify end-to-end execution:
+```bash
 run-agent-headless "print('Installation Successful!')"
 ```
 
 ## Step 5: Report to User
 Inform the user that the installation is complete. Tell them that if they need to authenticate into any platforms (like X.com or LinkedIn) for you to automate, they should run `start-agent-browser` in their terminal to log in once.
+
+After they have logged in, run the cookie sync so background automation can reuse their authenticated sessions:
+```bash
+agent-cookie-sync
+```

@@ -44,6 +44,10 @@ cleanup() {
         fi
         
         pkill -9 -f "chromium-browser.*agent-automation" 2>/dev/null || true
+        
+        # Kill any stale browser-harness daemon that might be holding a dead CDP connection
+        pkill -9 -f "browser_harness.daemon" 2>/dev/null || true
+        rm -f /tmp/bu-*.sock /tmp/bu-*.pid 2>/dev/null
     fi
     
     # Clean stale Chromium lockfiles and explicitly clear caching directories to prevent long-term bloat
@@ -101,8 +105,11 @@ except Exception:
       --ignore-certificate-errors > /dev/null 2>&1 &
       
     CHROME_PID=$!
-    
-    timeout 10 bash -c 'until curl -s http://127.0.0.1:9222/json/version >/dev/null 2>&1; do sleep 0.5; done'
+    # Wait for CDP endpoint to be ready
+    if ! timeout 10 bash -c 'until curl -s http://127.0.0.1:9222/json/version >/dev/null 2>&1; do sleep 0.5; done'; then
+        echo "[Process $$] Error: Chromium failed to bind to port 9222 within 10 seconds. Check for zombie processes or missing display dependencies."
+        exit 1
+    fi
     
     export BU_CDP_URL=http://127.0.0.1:9222
     

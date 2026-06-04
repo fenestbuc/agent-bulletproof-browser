@@ -1,0 +1,66 @@
+#!/bin/bash
+# lib/config.sh — Single source of truth for agent browser configuration.
+# Precedence: built-in defaults < config file < environment variables.
+
+# --- Defaults ---
+_DEFAULT_AGENT_TIMEOUT=300
+_DEFAULT_AGENT_CDP_PORT=9222
+_DEFAULT_AGENT_LOCK_TIMEOUT=120
+_DEFAULT_AGENT_DISK_THRESHOLD_MB=500
+_DEFAULT_AGENT_SKIP_IF_LOCKED=0
+_DEFAULT_AGENT_JSON_LOG=0
+_DEFAULT_AGENT_LOG_LEVEL=info
+_DEFAULT_AGENT_DEFAULT_UA_VERSION=148.0.0.0
+
+# --- Snapshot environment overrides ---
+_env_AGENT_TIMEOUT="${AGENT_TIMEOUT:-}"
+_env_AGENT_CDP_PORT="${AGENT_CDP_PORT:-}"
+_env_AGENT_LOCK_TIMEOUT="${AGENT_LOCK_TIMEOUT:-}"
+_env_AGENT_DISK_THRESHOLD_MB="${AGENT_DISK_THRESHOLD_MB:-}"
+_env_AGENT_SKIP_IF_LOCKED="${AGENT_SKIP_IF_LOCKED:-}"
+_env_AGENT_JSON_LOG="${AGENT_JSON_LOG:-}"
+_env_AGENT_LOG_LEVEL="${AGENT_LOG_LEVEL:-}"
+_env_AGENT_DEFAULT_UA_VERSION="${AGENT_DEFAULT_UA_VERSION:-}"
+
+# Clear runtime variables so the config file layer is clean
+unset AGENT_TIMEOUT AGENT_CDP_PORT AGENT_LOCK_TIMEOUT AGENT_DISK_THRESHOLD_MB AGENT_SKIP_IF_LOCKED AGENT_JSON_LOG AGENT_LOG_LEVEL AGENT_DEFAULT_UA_VERSION
+
+# --- Config file ---
+_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/agent-browser"
+_config_file="$_config_dir/config"
+
+if [ -f "$_config_file" ]; then
+    # shellcheck disable=SC2034
+    while IFS='=' read -r key value; do
+        case "$key" in
+            '' | \#*) continue ;;
+        esac
+        case "$key" in
+            AGENT_TIMEOUT | AGENT_CDP_PORT | AGENT_LOCK_TIMEOUT | AGENT_DISK_THRESHOLD_MB | AGENT_SKIP_IF_LOCKED | AGENT_JSON_LOG | AGENT_LOG_LEVEL | AGENT_DEFAULT_UA_VERSION)
+                eval "$key=\$value"
+                ;;
+        esac
+    done <"$_config_file"
+fi
+
+# --- Apply defaults for anything still unset ---
+AGENT_TIMEOUT="${AGENT_TIMEOUT:-$_DEFAULT_AGENT_TIMEOUT}"
+AGENT_CDP_PORT="${AGENT_CDP_PORT:-$_DEFAULT_AGENT_CDP_PORT}"
+AGENT_LOCK_TIMEOUT="${AGENT_LOCK_TIMEOUT:-$_DEFAULT_AGENT_LOCK_TIMEOUT}"
+AGENT_DISK_THRESHOLD_MB="${AGENT_DISK_THRESHOLD_MB:-$_DEFAULT_AGENT_DISK_THRESHOLD_MB}"
+AGENT_SKIP_IF_LOCKED="${AGENT_SKIP_IF_LOCKED:-$_DEFAULT_AGENT_SKIP_IF_LOCKED}"
+AGENT_JSON_LOG="${AGENT_JSON_LOG:-$_DEFAULT_AGENT_JSON_LOG}"
+AGENT_LOG_LEVEL="${AGENT_LOG_LEVEL:-$_DEFAULT_AGENT_LOG_LEVEL}"
+AGENT_DEFAULT_UA_VERSION="${AGENT_DEFAULT_UA_VERSION:-$_DEFAULT_AGENT_DEFAULT_UA_VERSION}"
+
+# --- Re-apply environment overrides (highest precedence) ---
+[ -n "$_env_AGENT_TIMEOUT" ] && AGENT_TIMEOUT="$_env_AGENT_TIMEOUT"
+[ -n "$_env_AGENT_CDP_PORT" ] && AGENT_CDP_PORT="$_env_AGENT_CDP_PORT"
+[ -n "$_env_AGENT_LOCK_TIMEOUT" ] && AGENT_LOCK_TIMEOUT="$_env_AGENT_LOCK_TIMEOUT"
+[ -n "$_env_AGENT_DISK_THRESHOLD_MB" ] && AGENT_DISK_THRESHOLD_MB="$_env_AGENT_DISK_THRESHOLD_MB"
+[ -n "$_env_AGENT_SKIP_IF_LOCKED" ] && AGENT_SKIP_IF_LOCKED="$_env_AGENT_SKIP_IF_LOCKED"
+[ -n "$_env_AGENT_JSON_LOG" ] && AGENT_JSON_LOG="$_env_AGENT_JSON_LOG"
+[ -n "$_env_AGENT_LOG_LEVEL" ] && AGENT_LOG_LEVEL="$_env_AGENT_LOG_LEVEL"
+[ -n "$_env_AGENT_DEFAULT_UA_VERSION" ] && AGENT_DEFAULT_UA_VERSION="$_env_AGENT_DEFAULT_UA_VERSION"
+
+true

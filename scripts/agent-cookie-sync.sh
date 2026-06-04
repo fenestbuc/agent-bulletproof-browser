@@ -11,8 +11,16 @@ set -euo pipefail
 # Usage: agent-cookie-sync
 # =============================================================================
 
-FG_PROFILE="$HOME/.config/chromium/agent-automation-fg"
-BG_PROFILE="$HOME/.config/chromium/agent-automation-bg"
+if [ -n "${AGENT_BROWSER_LIB:-}" ]; then
+    _LIB_DIR="$AGENT_BROWSER_LIB"
+else
+    _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    _LIB_DIR="$_SCRIPT_DIR/../lib"
+fi
+source "$_LIB_DIR/detect.sh"
+
+FG_PROFILE=$(agent_profile_dir "agent-automation-fg")
+BG_PROFILE=$(agent_profile_dir "agent-automation-bg")
 
 if [ ! -d "$FG_PROFILE" ]; then
     echo "Error: Foreground profile not found at $FG_PROFILE"
@@ -43,10 +51,10 @@ for rel in "${AUTH_FILES[@]}"; do
         mkdir -p "$(dirname "$dst")"
         cp "$src" "$dst"
         echo "  [OK] $rel"
-        ((copied++)) || true
+        copied=$((copied + 1))
     else
         echo "  [SKIP] $rel (not present in foreground)"
-        ((skipped++)) || true
+        skipped=$((skipped + 1))
     fi
 done
 

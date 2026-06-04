@@ -7,8 +7,33 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck and shfmt
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          curl -sSL https://github.com/mvdan/sh/releases/download/v3.11.0/shfmt_v3.11.0_linux_amd64 -o /tmp/shfmt
+          chmod +x /tmp/shfmt
+          sudo mv /tmp/shfmt /usr/local/bin/
+
+      - name: Run shellcheck
+        run: |
+          shellcheck scripts/*.sh install.sh tests/run-tests.sh lib/*.sh
+
+      - name: Run shfmt
+        run: |
+          shfmt -d -i 4 -ci scripts/*.sh install.sh tests/run-tests.sh lib/*.sh
+
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,12 +50,16 @@ jobs:
           bash -n scripts/agent-cookie-sync.sh
           bash -n install.sh
           bash -n tests/run-tests.sh
+          bash -n lib/*.sh
 
       - name: Run manual test suite
         run: bash tests/run-tests.sh
 
-      - name: Run bats test suite
+      - name: Run bats test suite (legacy)
         run: bats tests/test-core.bats
+
+      - name: Run lib unit tests
+        run: bats tests/lib/
 
       - name: Verify JSON check output is valid ND-JSON
         run: |

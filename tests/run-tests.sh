@@ -14,13 +14,16 @@ cd "$REPO_DIR"
 
 FAILED=0
 pass() { echo "  [PASS] $1"; }
-fail() { echo "  [FAIL] $1"; FAILED=$((FAILED+1)); }
+fail() {
+    echo "  [FAIL] $1"
+    FAILED=$((FAILED + 1))
+}
 
 echo "=== Syntax Validation ==="
-bash -n scripts/run-agent-headless.sh  && pass "run-agent-headless.sh parses"  || fail "run-agent-headless.sh syntax"
+bash -n scripts/run-agent-headless.sh && pass "run-agent-headless.sh parses" || fail "run-agent-headless.sh syntax"
 bash -n scripts/start-agent-browser.sh && pass "start-agent-browser.sh parses" || fail "start-agent-browser.sh syntax"
-bash -n scripts/agent-cookie-sync.sh   && pass "agent-cookie-sync.sh parses"   || fail "agent-cookie-sync.sh syntax"
-bash -n install.sh                     && pass "install.sh parses"             || fail "install.sh syntax"
+bash -n scripts/agent-cookie-sync.sh && pass "agent-cookie-sync.sh parses" || fail "agent-cookie-sync.sh syntax"
+bash -n install.sh && pass "install.sh parses" || fail "install.sh syntax"
 
 echo ""
 echo "=== POSIX Version Extraction (replaces grep -P) ==="
@@ -68,7 +71,8 @@ fi
 echo ""
 echo "=== Cross-Platform Timeout Fallback ==="
 agent_timeout() {
-    local t="$1"; shift
+    local t="$1"
+    shift
     if command -v timeout >/dev/null 2>&1; then
         timeout "$t" "$@"
     elif command -v gtimeout >/dev/null 2>&1; then
@@ -81,7 +85,10 @@ agent_timeout() {
 result=$(agent_timeout 1 sleep 0.1 && echo OK || echo FAIL)
 [ "$result" = "OK" ] && pass "agent_timeout runs short command successfully" || fail "agent_timeout failed on short command"
 
-result=$(agent_timeout 1 sleep 5; echo "should-timeout")
+result=$(
+    agent_timeout 1 sleep 5
+    echo "should-timeout"
+)
 # We expect the timeout to kill sleep 5; the exit code depends on the timeout impl
 pass "agent_timeout kills long command (verified manually)"
 
@@ -107,7 +114,6 @@ pass "mkdir lock released and cleaned"
 
 echo ""
 echo "=== Profile Directory Separation ==="
-fg_dir="$HOME/.config/chromium/agent-automation-fg"
 bg_dir="$HOME/.config/chromium/agent-automation-bg"
 if [ -d "$bg_dir" ]; then
     pass "Background profile exists"

@@ -250,6 +250,7 @@ else
         --disable-blink-features=AutomationControlled \
         --disable-dev-shm-usage \
         --disable-gpu \
+        --lang=en-US,en \
         --mute-audio \
         --no-first-run \
         --no-default-browser-check \

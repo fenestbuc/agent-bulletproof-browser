@@ -38,6 +38,10 @@ chmod +x install.sh
 ./install.sh
 ```
 
+## 📋 Changelog & Feature Tracking
+
+See [CHANGELOG.md](./CHANGELOG.md) for a history of updates, fixes, and new features.
+
 ## 🚀 Usage
 
 ### 1. Foreground Login (One-Time Setup per Platform)
